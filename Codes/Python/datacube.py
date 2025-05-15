@@ -4,8 +4,8 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import numpy as np
 
-loc = os.path.expanduser("~/Desktop/Capivara_mestrado/Input/S4G")
-#loc = os.path.expanduser("~/Desktop/Capivara_mestrado/Input/PHANGS/phangs_hst/ngc1087")
+#loc = os.path.expanduser("~/Desktop/Capivara_mestrado/Input/S4G")
+loc = os.path.expanduser("~/Desktop/Capivara_mestrado/Input/PHANGS/phangs_hst/ngc1087")
 # Change to the target directory
 os.chdir(loc)
 
@@ -16,14 +16,29 @@ file_list = os.listdir()
 #with fits.open('hlsp_phangs-hst_hst_wfc3-uvis_ngc1087_f336w_v1_err-drc-wht.fits') as hdul:
 
 print(file_list)
-with fits.open('NGC1087.phot.1.fits') as hdul:
+with fits.open('hlsp_phangs-hst_hst_wfc3-uvis_ngc1087_f336w_v1_err-drc-wht.fits') as hdul:
     # Print the names of the HDUs in the file
     data = hdul[0].data
     header = hdul[0].header
 
-    print(hdul.info())
+    #print(hdul.info())
+        # Obtenha as dimensões
+    y_size, x_size = data.shape
+    
+    # Defina os limites do recorte (100 pixels de cada lado)
+    x_center, y_center = x_size // 2, y_size // 2
+    x_start, x_end = x_center - 100, x_center + 100
+    y_start, y_end = y_center - 100, y_center + 100
+    
+    # Recorte os dados
+    data_cut = data[y_start:y_end, x_start:x_end]
+    
+    # Atualize o header WCS
+    header['CRPIX1'] -= x_start  # Ajuste do ponto de referência X
+    header['CRPIX2'] -= y_start  # Ajuste do ponto de referência Y
+    
 
-print(data)
+print(data_cut)
 
 
 
@@ -65,8 +80,17 @@ def parse_fits_header(filename):
 print(header_data['main_metadata'])'''
 
 
-
+'''data_filtered = data[len(data.shape[0]//2), len(data.shape[1]//2)]
 plt.imshow(np.nan_to_num(data, nan=0), origin='lower', cmap='inferno')
 plt.title('Imagem com NaNs tratados como 0')
+plt.colorbar()
+plt.show()
+'''
+
+
+
+print(data_cut.shape)
+plt.figure()
+plt.imshow(data_cut, origin='lower', cmap='inferno')
 plt.colorbar()
 plt.show()

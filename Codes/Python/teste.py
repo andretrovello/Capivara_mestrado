@@ -55,19 +55,46 @@ file_list = os.listdir()
 with fits.open('hlsp_phangs-hst_hst_wfc3-uvis_ngc1087_f275w_v1_err-drc-wht.fits') as hdul:
     data = hdul[0].data
     head = hdul[0].header
+    y_size, x_size = data.shape
+    
+    # Defina os limites do recorte (100 pixels de cada lado)
+    x_center, y_center = x_size // 2, y_size // 2
+    x_start, x_end = x_center - 100, x_center + 100
+    y_start, y_end = y_center - 100, y_center + 100
+    
+    # Recorte os dados
+    data_cut = data[y_start:y_end, x_start:x_end]
+    
+
 
 '''phangs = parse_fits_header('hlsp_phangs-hst_hst_wfc3-uvis_ngc1087_f275w_v1_err-drc-wht.fits')
 #print(phangs['main_metadata'])
 print(data.shape)'''
 
-data_cube = np.zeros((data.shape[0], data.shape[1], len(file_list)))
+data_cube = np.zeros((data_cut.shape[0], data_cut.shape[1], len(file_list)))
 
-for i,name in enumerate(file_list):
-    with fits.open(name) as hdul:
+for i in range(0, len(file_list)):
+    with fits.open(file_list[i]) as hdul:
+        
         data = hdul[0].data
         head = hdul[0].header
-        print(i, name)
-        data_cube[:,:,i] = data
+        y_size, x_size = data.shape
+        
+        # Defina os limites do recorte (100 pixels de cada lado)
+        x_center, y_center = x_size // 2, y_size // 2
+        x_start, x_end = x_center - 100, x_center + 100
+        y_start, y_end = y_center - 100, y_center + 100
+        
+        # Recorte os dados
+        data_cut = data[y_start:y_end, x_start:x_end]
+        
+        # Atualize o header WCS
+        head['CRPIX1'] -= x_start  # Ajuste do ponto de referência X
+        head['CRPIX2'] -= y_start  # Ajuste do ponto de referência Y
+        print(i, file_list[i])
+        data_cube[:,:,i] = data_cut
 
 
 print(data_cube.shape)
+# Salve o novo arquivo
+fits.writeto('phangs_teste.fits', data_cube, head, overwrite=True)
