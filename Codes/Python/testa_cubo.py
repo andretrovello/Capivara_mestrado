@@ -22,6 +22,6 @@ print(data.shape)
 figura = data[0, :, :]
 print(figura.shape)
 plt.figure()
-plt.imshow(figura[40:60, 40:60], cmap='inferno', origin='lower')
+plt.imshow(figura[60:80, 60:80], cmap='inferno', origin='lower')
 plt.colorbar()
 plt.show()

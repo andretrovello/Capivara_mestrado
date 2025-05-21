@@ -7,15 +7,18 @@ import psutil
 import gc
 from tqdm import tqdm  # Para barra de progresso
 
+# Obtem os filtros do survey 
 def get_filters(file_list, start, position):
     return list(set(file.split('_')[position] for file in file_list if file.startswith(start)))
 
+# Checa o uso de memória ao longo do programa
 def log_memory_usage():
     process = psutil.Process(os.getpid())
     print(f"Uso de memória: {process.memory_info().rss / 1024 ** 2:.2f} MB")
 
+# Cria o cubo de dados considerando apenas uma região dos dados
+# visto que os arquivos completos do PHANGS são muito pesados
 def create_data_cube(aligned_images, filter_names, ref_header, ref_data, output_filename):
-    """Cria e salva o cubo de dados 3D com WCS apropriado"""
     # Cria o array 3D do cubo
     cube = np.array(aligned_images)
     
@@ -54,8 +57,8 @@ def create_data_cube(aligned_images, filter_names, ref_header, ref_data, output_
     
     return cube, cube_header
 
+# Corta o cubo principal em regiões menores
 def create_cutouts(cube, cube_header, regions):
-    """Cria e salva recortes menores do cubo principal"""
     for name, x_start, x_end, y_start, y_end in regions:
         # Verifica se os limites estão dentro das dimensões do cubo
         if (x_end > cube.shape[2] or y_end > cube.shape[1] or 
@@ -81,21 +84,22 @@ def create_cutouts(cube, cube_header, regions):
         print(f"Cubo recortado '{filename}' salvo com sucesso!")
 
 def main():
+    # Procura o diretório onde estão os FITS
     loc = os.path.expanduser("~/Desktop/Capivara_mestrado/Input/PHANGS/phangs_hst/ngc1087")
     os.chdir(loc)
     file_list = [f for f in os.listdir() if f.endswith('.fits')]
     
-    # Processa apenas 3 arquivos inicialmente para testes
+    # Processa os arquivos FITS
     fits_files = [(f, f.split('_')[5]) for f in file_list if f.startswith('hlsp_phangs-hst_hst_wfc3-uvis_ngc1087_')]
     
-    # 1. Carregar a imagem de referência
+    # 1. Carrega a imagem de referência
     ref_file = fits_files[0][0]
     with fits.open(ref_file) as hdul_ref:
         ref_data = hdul_ref[0].data
         ref_header = hdul_ref[0].header
         y_size, x_size = ref_data.shape
         
-        # Definir região de recorte (100x100 pixels)
+        # Definir região de recorte (200x200 pixels)
         cut_size = 100
         x_center, y_center = x_size // 2, y_size // 2
         x_start, x_end = x_center - cut_size, x_center + cut_size
@@ -107,7 +111,7 @@ def main():
         ref_header_cut['NAXIS1'] = cut_size * 2
         ref_header_cut['NAXIS2'] = cut_size * 2
     
-    # 2. Processar cada arquivo
+    # 2. Processa cada arquivo
     aligned_images = []
     filter_names = []
     
@@ -142,11 +146,11 @@ def main():
         except Exception as e:
             print(f"Erro processando {file}: {str(e)}")
         
-        # Limpeza de memória
+        # Limpa a memória para evitar sobrecarga
         gc.collect()
         log_memory_usage()
     
-    # 3. Criar cubo de dados
+    # 3. Cria cubo de dados
     if aligned_images:
         cube, cube_header = create_data_cube(
             aligned_images, 
@@ -156,7 +160,7 @@ def main():
             'PHANGS_cube.fits'
         )
         
-        # 4. Criar recortes menores
+        # 4. Cria recortes menores
         regions = [
             ('region1', 40, 60, 40, 60),    # x1, x2, y1, y2 (dentro do recorte 100x100)
             ('region2', 60, 80, 40, 60),

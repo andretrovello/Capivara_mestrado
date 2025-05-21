@@ -7,11 +7,11 @@ library(capivara)
 require(capivara)
 # Read the MaNGA datacube
 #cube <- "/home/andretrovello/Desktop/manga-9000-12702-LOGCUBE.fits"
-cube <- "/home/andretrovello/Desktop/Capivara_mestrado/Output/PHANGS_cube_region1.fits"
+cube <- "/home/andretrovello/Desktop/Capivara_mestrado/Output/PHANGS_cube_region3.fits"
 t<-FITSio::readFITS(cube)
 
 # Apply Capivara segmentation
-res <- capivara::segment(t,Ncomp=15)
+res <- capivara::segment(t,Ncomp=20)
 
 image(res$cluster_map)
 # Plot the segmented region
